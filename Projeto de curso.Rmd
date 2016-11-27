@@ -1,0 +1,165 @@
+---
+title: "Practical  Machine Learning - Course Project"
+author: "Jorge Gervasio Pereira"
+date: "26 de novembro de 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(caret)
+library(rpart)
+library(rpart.plot)
+library(RColorBrewer)
+library(rattle)
+library(randomForest)
+library(knitr)
+```
+
+## Introduction
+
+The goal of this project is develop a routine to deploy  a machine-learning algorithm that can correctly identify the quality of barbell bicep curls by using data  collected from enthusiasts who take measurements about themselves regularly to improve their health.
+
+
+
+
+## Objectives
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways.
+
+The goal of this project is to build a machine learning algorithm to predict activity quality (classe) from activity monitors.
+
+## On line Repositories
+
+The training data for this project are available here: https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+
+The test data are available here:
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+The data for this project come from this source: http://groupware.les.inf.puc-rio.br/har. If you use the document you create for this class for any purpose please cite them as they have been very generous in allowing their data to be used for this kind of assignment.
+
+```{r load}
+
+set.seed(837642)
+
+trainUrl <- "http://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+testUrl <- "http://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+
+
+#Reading taining and testing set without NA variable
+training <- read.csv(url(trainUrl), na.strings=c("NA","#DIV/0!",""))
+testing <- read.csv(url(testUrl), na.strings=c("NA","#DIV/0!",""))
+```
+
+## Preparing Data:
+#### Removing zero value data from datasets
+
+```{r cleaning}
+training <- training[, colSums(is.na(training)) == 0]
+testing <- testing[, colSums(is.na(testing)) == 0]
+
+```
+
+#### Removing first seven columns, since them  harbor no information 
+```{r colrem}
+trainData <- training[, -c(1:7)]
+testData <- testing[, -c(1:7)]
+
+#Show size of training and testing data sets
+dim(trainData)
+dim(testData)
+
+```
+#####Data Splitting
+
+In order to verify training datataset for errors, let's split our sample in 70/30
+prediction and validation sets
+
+```{r div}
+
+inTrain <- createDataPartition(trainData$classe, p = 0.7, list = FALSE)
+train <- trainData[inTrain, ]
+valid <- trainData[-inTrain, ]
+```
+```
+## Choosing algorithm for prediction and Data Modeling
+
+My options for ML algorithms to be used was Random Forest (RF) and Classification Trees (CART).
+
+RF is a very good choice when non-linearies are present on sample data, but CART are more flexible.
+
+#### Classification Trees
+
+In order to economize computer time, let's use 5-fold cross validatio when implementing the algorithm.
+
+```{r CART}
+
+varcrtl <- trainControl(method = "cv", number = 5)
+rpart_ajusted <- train(classe ~ ., data = train, method = "rpart",trControl = varcrtl)
+print(rpart_ajusted, digits = 4)
+
+```
+
+```{r pltree}
+fancyRpartPlot(rpart_ajusted$finalModel)
+```
+
+Let's see the acuracy of our predictions unsing the validation dataset
+```{r valid}
+rpart_predicted <- predict(rpart_ajusted, valid)
+
+# Aplying confusion matrix
+(Matrix_conf <- confusionMatrix(valid$classe, rpart_predicted))
+
+```
+Lets now verify the accuracy of CART prediction
+```{r acc}
+(verf_acc <- Matrix_conf$overall[1])
+```
+
+Analyzing the result of confusion matrix, we can see that we have a very poor accuracy
+result, so we must choose anther kind of algorithm to look for a better outcomo for
+our prediction
+
+## Random Forest
+Let's start the use of Random Forest algorithm preparing the dataset
+
+```{r parte1}
+fit_rf <- train(classe ~ ., data = train, method = "rf", 
+                   trControl = varcrtl)
+print(fit_rf, digits = 4)
+
+```
+Let's now verify the accuracy of this new model
+```{r acc2}
+
+# predict outcomes using validation set
+predict_rf <- predict(fit_rf, valid)
+# Show prediction result
+(conf_rf <- confusionMatrix(valid$classe, predict_rf))
+
+```
+ 
+ ##Algorithm Avaliation
+
+ For this dataset, the Random Forest (RF) ML algorithm brings the best accuracy on predicting the outcome, far beyeond that on brought by CART. The reason is that Random forests chooses a subset of predictors at each split and decorrelate the trees and this leads to high accuracy.
+ 
+ Let's use this algoritm then on our Testing set and analyze the results..
+ 
+ ## Applying Random Forest algoritm on Testing Set
+ 
+ The output variable is class and let's see the results
+ 
+ ```{r pred}
+ (predict(fit_rf, testData))
+ 
+ ```
+ 
+ ##Conclusion
+ 
+ Our exercise has displyed a method to compare two diffent types of Machine Leaning algorithms
+ and the necessary steps to choose the best one to an especific data set
+ 
+
+ 
+
+ 
