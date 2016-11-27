@@ -6,7 +6,12 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = TRUE,
+	warning = TRUE
+)
+
 library(caret)
 library(rpart)
 library(rpart.plot)
@@ -138,14 +143,17 @@ predict_rf <- predict(fit_rf, valid)
 (conf_rf <- confusionMatrix(valid$classe, predict_rf))
 
 ```
+
  
- ##Algorithm Avaliation
+## Algorithm Avaliation and Out-of-Sample Error
 
  For this dataset, the Random Forest (RF) ML algorithm brings the best accuracy on predicting the outcome, far beyeond that on brought by CART. The reason is that Random forests chooses a subset of predictors at each split and decorrelate the trees and this leads to high accuracy.
  
+### The accuracy rate is 0.991, and so the out-of-sample error rate is 0.009. 
+ 
  Let's use this algoritm then on our Testing set and analyze the results..
  
- ## Applying Random Forest algoritm on Testing Set
+## Applying Random Forest algoritm on Testing Set
  
  The output variable is class and let's see the results
  
@@ -154,7 +162,7 @@ predict_rf <- predict(fit_rf, valid)
  
  ```
  
- ##Conclusion
+## Conclusion
  
  Our exercise has displyed a method to compare two diffent types of Machine Leaning algorithms
  and the necessary steps to choose the best one to an especific data set
